@@ -1,0 +1,13 @@
+# Connect to Exchange Online
+Connect-ExchangeOnline
+
+# Set the domain you want to check
+$domain = "@domain.se"
+
+# Find all mailboxes with that domain as an alias (proxy address)
+Get-Mailbox -ResultSize Unlimited | Where-Object {
+    $_.EmailAddresses -like "smtp:*$domain"
+} | Select-Object DisplayName, PrimarySmtpAddress,
+    @{Name="MatchingAliases"; Expression={
+        $_.EmailAddresses | Where-Object { $_ -like "smtp:*$domain" }
+    }}
