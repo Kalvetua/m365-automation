@@ -1,0 +1,46 @@
+Connect-ExchangeOnline
+
+# Shared mailbox details
+$sharedMailboxName    = "Name of shared inbox"
+$sharedMailboxPrimary = "InboxName@domain.se"
+
+# Users to delegate access to (identified by primary SMTP)
+$delegates = @(
+    "username@domain.se",
+    "username@domain.se"
+)
+
+# Create the shared mailbox
+try {
+    New-Mailbox -Shared `
+        -Name $sharedMailboxName `
+        -PrimarySmtpAddress $sharedMailboxPrimary
+    Write-Host "Created: $sharedMailboxPrimary" -ForegroundColor Green
+} catch {
+    Write-Host "FAIL (create) — $($_.Exception.Message)" -ForegroundColor Red
+    exit
+}
+
+# Delegate FullAccess + SendAs to each user
+foreach ($delegate in $delegates) {
+    try {
+        Add-MailboxPermission -Identity $sharedMailboxPrimary `
+            -User $delegate `
+            -AccessRights FullAccess `
+            -InheritanceType All `
+            -AutoMapping $true
+        Write-Host "OK  FullAccess → $delegate" -ForegroundColor Green
+    } catch {
+        Write-Host "FAIL FullAccess → $delegate — $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    try {
+        Add-RecipientPermission -Identity $sharedMailboxPrimary `
+            -Trustee $delegate `
+            -AccessRights SendAs `
+            -Confirm:$false
+        Write-Host "OK  SendAs    → $delegate" -ForegroundColor Green
+    } catch {
+        Write-Host "FAIL SendAs   → $delegate — $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
