@@ -1,0 +1,12 @@
+Connect-ExchangeOnline
+
+$sharedMailboxes = Get-Mailbox -RecipientTypeDetails SharedMailbox -ResultSize Unlimited
+
+foreach ($mailbox in $sharedMailboxes) {
+    Write-Host "`n$($mailbox.DisplayName) — $($mailbox.PrimarySmtpAddress)" -ForegroundColor Cyan
+
+    Get-MailboxPermission -Identity $mailbox.PrimarySmtpAddress |
+        Where-Object { $_.User -notlike "NT AUTHORITY\*" -and $_.IsInherited -eq $false } |
+        Select-Object User, AccessRights |
+        Format-Table -AutoSize
+}
